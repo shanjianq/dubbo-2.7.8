@@ -83,12 +83,32 @@ public abstract class AbstractRegistry implements Registry {
     // File cache timing writing
     private final ExecutorService registryCacheExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("DubboSaveRegistryCache", true));
     // Is it synchronized to save the file
+    /**
+     * 是否同步保存文件
+     */
     private boolean syncSaveFile;
+    /**
+     * 上次缓存版本
+     */
     private final AtomicLong lastCacheChanged = new AtomicLong();
     private final AtomicInteger savePropertiesRetryTimes = new AtomicInteger();
+    /**
+     * 已注册的url
+     */
     private final Set<URL> registered = new ConcurrentHashSet<>();
+    /**
+     * 存放订阅信息，key是订阅的url，value是订阅者，一旦key这个url发生变化，就通知value这堆订阅者
+     */
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<>();
+    /**
+     * 存放已通知的url
+     * key 订阅者url
+     * value 一个map 其中：key 为订阅的provider的category ，value 为该category种类的provider url
+     */
     private final ConcurrentMap<URL, Map<String, List<URL>>> notified = new ConcurrentHashMap<>();
+    /**
+     * 注册中心url
+     */
     private URL registryUrl;
     // Local disk cache file
     private File file;
@@ -113,6 +133,10 @@ public abstract class AbstractRegistry implements Registry {
             // When starting the subscription center,
             // we need to read the local cache file for future Registry fault tolerance processing.
             loadProperties();
+            /**
+             * 从注册中心url中找到backup的属性值，这个backup属性值就是需要恢复的一些服务提供者url，再调用notify进行通知
+             * 将那些恢复的url通知给订阅方
+             */
             notify(url.getBackupUrls());
         }
     }
@@ -142,6 +166,10 @@ public abstract class AbstractRegistry implements Registry {
         return Collections.unmodifiableSet(registered);
     }
 
+    /**
+     * 获取所有服务订阅者
+     * @return
+     */
     public Map<URL, Set<NotifyListener>> getSubscribed() {
         return Collections.unmodifiableMap(subscribed);
     }
@@ -210,6 +238,10 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 将本地文件流的内容load到properties中
+     * 以键值对的形式保存
+     */
     private void loadProperties() {
         if (file != null && file.exists()) {
             InputStream in = null;
@@ -329,10 +361,16 @@ public abstract class AbstractRegistry implements Registry {
         }
         Set<NotifyListener> listeners = subscribed.get(url);
         if (listeners != null) {
+            //这里只是移除该url中的listenerSet中对应的listener
+            //但是本身subscribed这个map的key还是没动的
             listeners.remove(listener);
         }
     }
 
+    /**
+     * 恢复，该方法会在子类重连的时候被用到
+     * @throws Exception
+     */
     protected void recover() throws Exception {
         // register
         Set<URL> recoverRegistered = new HashSet<>(getRegistered());
@@ -359,6 +397,10 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 这个notify是通知备份url的
+     * @param urls
+     */
     protected void notify(List<URL> urls) {
         if (CollectionUtils.isEmpty(urls)) {
             return;
@@ -372,6 +414,7 @@ public abstract class AbstractRegistry implements Registry {
             }
 
             Set<NotifyListener> listeners = entry.getValue();
+            //循环通知
             if (listeners != null) {
                 for (NotifyListener listener : listeners) {
                     try {
@@ -386,10 +429,10 @@ public abstract class AbstractRegistry implements Registry {
 
     /**
      * Notify changes from the Provider side.
-     *
+     * 通知订阅者，服务提供者的变化
      * @param url      consumer side url
      * @param listener listener
-     * @param urls     provider latest urls
+     * @param urls     provider latest urls 服务提供方最新的url
      */
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
         if (url == null) {
@@ -407,9 +450,16 @@ public abstract class AbstractRegistry implements Registry {
             logger.info("Notify urls for subscribe url " + url + ", urls: " + urls);
         }
         // keep every provider's category.
+        /**
+         * key： provider的category
+         * value： provider的url
+         */
         Map<String, List<URL>> result = new HashMap<>();
+
+        //遍历provider，按照category来分类
         for (URL u : urls) {
             if (UrlUtils.isMatch(url, u)) {
+                //url种类 类似于是providers还是consumers
                 String category = u.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
                 List<URL> categoryList = result.computeIfAbsent(category, k -> new ArrayList<>());
                 categoryList.add(u);

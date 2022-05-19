@@ -52,8 +52,14 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
     protected static final ReentrantLock LOCK = new ReentrantLock();
 
     // Registry Collection Map<RegistryAddress, Registry>
+    /**
+     * 缓存注册中心对象 key是注册中心url的一个toServiceString，value是注册中心对象
+     */
     protected static final Map<String, Registry> REGISTRIES = new HashMap<>();
 
+    /**
+     * 注册中心是否被注销
+     */
     private static final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     /**
@@ -110,6 +116,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 .addParameter(INTERFACE_KEY, RegistryService.class.getName())
                 .removeParameters(EXPORT_KEY, REFER_KEY)
                 .build();
+        //注册中心的缓存key 类似zookeeper://127.0.0.1:2181/com.alibaba.dubbo.registry.RegistryService
         String key = createRegistryCacheKey(url);
         // Lock the registry access process to ensure a single instance of the registry
         LOCK.lock();
