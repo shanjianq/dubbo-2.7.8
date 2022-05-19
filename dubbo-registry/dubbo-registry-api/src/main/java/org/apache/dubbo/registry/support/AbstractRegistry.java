@@ -71,6 +71,7 @@ import static org.apache.dubbo.registry.Constants.REGISTRY__LOCAL_FILE_CACHE_ENA
 public abstract class AbstractRegistry implements Registry {
 
     // URL address separator, used in file cache, service provider URL separation
+    // URL地址分隔符，在缓存文件中使用，服务提供者的URL分割
     private static final char URL_SEPARATOR = ' ';
     // URL address separated regular expression for parsing the service provider URL list in the file cache
     private static final String URL_SPLIT = "\\s+";
@@ -94,10 +95,11 @@ public abstract class AbstractRegistry implements Registry {
     private final AtomicInteger savePropertiesRetryTimes = new AtomicInteger();
     /**
      * 已注册的url
+     * 注册的url不仅仅可以是服务提供者的，也可以是服务消费者的
      */
     private final Set<URL> registered = new ConcurrentHashSet<>();
     /**
-     * 存放订阅信息，key是订阅的url，value是订阅者，一旦key这个url发生变化，就通知value这堆订阅者
+     * 存放订阅信息，key是订阅的url，value是对应的监听器，一旦key这个url发生变化，就通知value这堆订阅者
      */
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<>();
     /**
@@ -110,8 +112,12 @@ public abstract class AbstractRegistry implements Registry {
      * 注册中心url
      */
     private URL registryUrl;
-    // Local disk cache file
+
+    /**
+     * 本地磁盘文件，缓存注册中心的数据
+     */
     private File file;
+
 
     public AbstractRegistry(URL url) {
         setUrl(url);
@@ -123,6 +129,9 @@ public abstract class AbstractRegistry implements Registry {
             File file = null;
             if (ConfigUtils.isNotEmpty(filename)) {
                 file = new File(filename);
+                final boolean exists = file.exists();
+                final File parentFile =file.getParentFile();
+                final boolean exists1 = parentFile.exists();
                 if (!file.exists() && file.getParentFile() != null && !file.getParentFile().exists()) {
                     if (!file.getParentFile().mkdirs()) {
                         throw new IllegalArgumentException("Invalid registry cache file " + file + ", cause: Failed to create directory " + file.getParentFile() + "!");
@@ -190,6 +199,10 @@ public abstract class AbstractRegistry implements Registry {
         return lastCacheChanged;
     }
 
+    /**
+     * 将properties属性写入本地文件中
+     * @param version
+     */
     public void doSaveProperties(long version) {
         if (version < lastCacheChanged.get()) {
             return;
@@ -333,6 +346,11 @@ public abstract class AbstractRegistry implements Registry {
         registered.remove(url);
     }
 
+    /**
+     *
+     * @param url      Subscription condition, not allowed to be empty, e.g. consumer://10.20.153.10/org.apache.dubbo.foo.BarService?version=1.0.0&application=kylin
+     * @param listener A listener of the change event, not allowed to be empty
+     */
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         if (url == null) {
@@ -473,12 +491,15 @@ public abstract class AbstractRegistry implements Registry {
             String category = entry.getKey();
             List<URL> categoryList = entry.getValue();
             categoryNotified.put(category, categoryList);
+
+            //执行通知器的通知方法
             listener.notify(categoryList);
             // We will update our cache file after each notification.
             // When our Registry has a subscribe failure due to network jitter, we can return at least the existing cache URL.
             saveProperties(url);
         }
     }
+
 
     private void saveProperties(URL url) {
         if (file == null) {
@@ -487,8 +508,10 @@ public abstract class AbstractRegistry implements Registry {
 
         try {
             StringBuilder buf = new StringBuilder();
+            //根据URL从已通知集合中获取分类urls
             Map<String, List<URL>> categoryNotified = notified.get(url);
             if (categoryNotified != null) {
+                //遍历拼接 url
                 for (List<URL> us : categoryNotified.values()) {
                     for (URL u : us) {
                         if (buf.length() > 0) {
@@ -498,11 +521,13 @@ public abstract class AbstractRegistry implements Registry {
                     }
                 }
             }
+            //key 接口全类名 value urls.toFullString
             properties.setProperty(url.getServiceKey(), buf.toString());
+            //版本+1
             long version = lastCacheChanged.incrementAndGet();
-            if (syncSaveFile) {
+            if (syncSaveFile) { //同步保存
                 doSaveProperties(version);
-            } else {
+            } else { //异步保存 使用一个单独的线程池去保存
                 registryCacheExecutor.execute(new SaveProperties(version));
             }
         } catch (Throwable t) {

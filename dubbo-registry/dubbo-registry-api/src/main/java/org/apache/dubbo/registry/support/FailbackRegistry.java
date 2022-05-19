@@ -49,18 +49,34 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     /*  retry task map */
 
+    /**
+     * 缓存注册失败的url
+     */
     private final ConcurrentMap<URL, FailedRegisteredTask> failedRegistered = new ConcurrentHashMap<URL, FailedRegisteredTask>();
 
+    /**
+     * 缓存下线失败的url
+     */
     private final ConcurrentMap<URL, FailedUnregisteredTask> failedUnregistered = new ConcurrentHashMap<URL, FailedUnregisteredTask>();
 
+    /**
+     * 订阅失败的url
+     */
     private final ConcurrentMap<Holder, FailedSubscribedTask> failedSubscribed = new ConcurrentHashMap<Holder, FailedSubscribedTask>();
 
+    /**
+     * 取消订阅失败
+     */
     private final ConcurrentMap<Holder, FailedUnsubscribedTask> failedUnsubscribed = new ConcurrentHashMap<Holder, FailedUnsubscribedTask>();
 
+    /**
+     * 通知失败
+     */
     private final ConcurrentMap<Holder, FailedNotifiedTask> failedNotified = new ConcurrentHashMap<Holder, FailedNotifiedTask>();
 
     /**
      * The time in milliseconds the retryExecutor will wait
+     * 重试时间间隔
      */
     private final int retryPeriod;
 
@@ -232,11 +248,15 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             logger.info("URL " + url + " will not be registered to Registry. Registry " + url + " does not accept service of this protocol type.");
             return;
         }
+        //这里注册是将信息保存在本地内存中
         super.register(url);
+        //移除与注册相关，失败的缓存
         removeFailedRegistered(url);
         removeFailedUnregistered(url);
         try {
             // Sending a registration request to the server side
+            // 进行注册 ，该方法为模板方法
+            //这里注册是将信息保存到zk中等
             doRegister(url);
         } catch (Exception e) {
             Throwable t = e;
@@ -256,6 +276,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            //失败重试是通过线程池定时执行的
             addFailedRegistered(url);
         }
     }
