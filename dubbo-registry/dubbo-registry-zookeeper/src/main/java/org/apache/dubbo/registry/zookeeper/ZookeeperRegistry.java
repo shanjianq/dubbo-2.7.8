@@ -63,14 +63,27 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     private final static Logger logger = LoggerFactory.getLogger(ZookeeperRegistry.class);
 
+    /**
+     * 默认根路径
+     */
     private final static String DEFAULT_ROOT = "dubbo";
 
+    /**
+     * 根路径
+     */
     private final String root;
 
     private final Set<String> anyServices = new ConcurrentHashSet<>();
 
+    /**
+     * 缓存的订阅的listener
+     * key 订阅的URL
+     */
     private final ConcurrentMap<URL, ConcurrentMap<NotifyListener, ChildListener>> zkListeners = new ConcurrentHashMap<>();
 
+    /**
+     * zk客户端
+     */
     private final ZookeeperClient zkClient;
 
     public ZookeeperRegistry(URL url, ZookeeperTransporter zookeeperTransporter) {
@@ -126,6 +139,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doRegister(URL url) {
         try {
+            //创建zk节点（默认是临时节点，客户端断开连接则节点删除）
             zkClient.create(toUrlPath(url), url.getParameter(DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -135,6 +149,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doUnregister(URL url) {
         try {
+            //就是zk删除对应节点
             zkClient.delete(toUrlPath(url));
         } catch (Throwable e) {
             throw new RpcException("Failed to unregister " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -144,7 +159,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doSubscribe(final URL url, final NotifyListener listener) {
         try {
-            if (ANY_VALUE.equals(url.getServiceInterface())) {
+            if (ANY_VALUE.equals(url.getServiceInterface())) {//订阅全部
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
                 ChildListener zkListener = listeners.computeIfAbsent(listener, k -> (parentPath, currentChilds) -> {
@@ -157,6 +172,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
                         }
                     }
                 });
+
+                //创建永久节点
                 zkClient.create(root, false);
                 List<String> services = zkClient.addChildListener(root, zkListener);
                 if (CollectionUtils.isNotEmpty(services)) {
@@ -169,6 +186,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 }
             } else {
                 List<URL> urls = new ArrayList<>();
+                //将URL转成分类的路径
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
                     ChildListener zkListener = listeners.computeIfAbsent(listener, k -> (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, k, toUrlsWithEmpty(url, parentPath, currentChilds)));
@@ -234,10 +252,12 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     private String toServicePath(URL url) {
+        //接口全类名
         String name = url.getServiceInterface();
         if (ANY_VALUE.equals(name)) {
             return toRootPath();
         }
+        // "/dubbo/xxx.xxx.xxx"
         return toRootDir() + URL.encode(name);
     }
 
@@ -256,10 +276,17 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     private String toCategoryPath(URL url) {
+        // “/dubbo/xx.xxx.xx/catagory(providers)"
         return toServicePath(url) + PATH_SEPARATOR + url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
     }
 
+    /**
+     * 将url转为zk path
+     * @param url
+     * @return
+     */
     private String toUrlPath(URL url) {
+        // ”/dubbo/xxx.xx.xxx/category(providers)/urlFullString“
         return toCategoryPath(url) + PATH_SEPARATOR + URL.encode(url.toFullString());
     }
 
