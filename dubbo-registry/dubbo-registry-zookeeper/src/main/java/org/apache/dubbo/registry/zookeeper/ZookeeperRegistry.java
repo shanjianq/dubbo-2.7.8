@@ -99,6 +99,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
         zkClient = zookeeperTransporter.connect(url);
         zkClient.addStateListener((state) -> {
             if (state == StateListener.RECONNECTED) {
+                /**
+                 * 与zk的客户端连接断开后，因为订阅节点都是临时节点，此时zk上的数据会删除
+                 * 所以重连时，要先拉取到最新的订阅url，然后重新注册到zk上（这里是通过注册失败重试线程池去重新注册的）
+                 */
                 logger.warn("Trying to fetch the latest urls, in case there're provider changes during connection loss.\n" +
                         " Since ephemeral ZNode will not get deleted for a connection lose, " +
                         "there's no need to re-register url of this instance.");
