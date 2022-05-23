@@ -99,7 +99,7 @@ public abstract class AbstractRegistry implements Registry {
      */
     private final Set<URL> registered = new ConcurrentHashSet<>();
     /**
-     * 存放订阅信息，key是订阅的url，value是对应的监听器，一旦key这个url发生变化，就通知value这堆订阅者
+     * 存放订阅信息，key是消费者url，value是消费者订阅的的监听器
      */
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<>();
     /**

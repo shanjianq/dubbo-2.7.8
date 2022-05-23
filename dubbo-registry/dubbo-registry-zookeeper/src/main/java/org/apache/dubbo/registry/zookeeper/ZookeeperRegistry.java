@@ -98,6 +98,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
         this.root = group;
         zkClient = zookeeperTransporter.connect(url);
         zkClient.addStateListener((state) -> {
+            //todo 为什么这里reconnect的时候不需要去re-register，而在2.6x版本的时候只做了re-register
             if (state == StateListener.RECONNECTED) {
                 /**
                  * 与zk的客户端连接断开后，因为订阅节点都是临时节点，此时zk上的数据会删除
@@ -189,6 +190,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     }
                 }
             } else {
+                //服务提供者列表
                 List<URL> urls = new ArrayList<>();
                 //将URL转成分类的路径
                 for (String path : toCategoriesPath(url)) {
@@ -200,6 +202,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                //这里要手动通知一下，不然只有子节点变动的时候才能通知，才能获取到服务提供者列表
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {

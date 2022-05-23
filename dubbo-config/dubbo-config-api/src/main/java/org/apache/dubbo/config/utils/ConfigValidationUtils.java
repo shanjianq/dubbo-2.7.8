@@ -172,11 +172,15 @@ public class ConfigValidationUtils {
         ApplicationConfig application = interfaceConfig.getApplication();
         List<RegistryConfig> registries = interfaceConfig.getRegistries();
         if (CollectionUtils.isNotEmpty(registries)) {
+            //遍历注册中心配置集合
             for (RegistryConfig config : registries) {
+                //获取注册中心地址
                 String address = config.getAddress();
+                //如果地址为空，则设置为0.0.0.0
                 if (StringUtils.isEmpty(address)) {
                     address = ANYHOST_VALUE;
                 }
+                //如果地址为N/A,则跳过
                 if (!RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
                     AbstractConfig.appendParameters(map, application);
@@ -194,6 +198,8 @@ public class ConfigValidationUtils {
                                 .addParameter(REGISTRY_KEY, url.getProtocol())
                                 .setProtocol(extractRegistryType(url))
                                 .build();
+                        //通过判断条件，决定是否将url添加到registryList中，条件如下：
+                        // 如果是服务提供者并且是注册中心服务或者 是消费者，且是订阅服务
                         if ((provider && url.getParameter(REGISTER_KEY, true))
                                 || (!provider && url.getParameter(SUBSCRIBE_KEY, true))) {
                             registryList.add(url);
