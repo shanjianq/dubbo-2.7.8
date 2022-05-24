@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * This class will work as a wrapper wrapping outside of each protocol invoker.
+ * 本质上是对invoker的一层再包装
  *
  * @param <T>
  */

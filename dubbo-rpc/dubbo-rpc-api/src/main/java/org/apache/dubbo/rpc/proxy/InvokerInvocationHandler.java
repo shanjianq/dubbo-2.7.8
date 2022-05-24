@@ -29,6 +29,8 @@ import java.lang.reflect.Method;
 
 /**
  * InvokerHandler
+ * 代理类的增强部分代码逻辑
+ * 主要增强的逻辑在invoke（）方法中，
  */
 public class InvokerInvocationHandler implements InvocationHandler {
     private static final Logger logger = LoggerFactory.getLogger(InvokerInvocationHandler.class);
@@ -62,6 +64,8 @@ public class InvokerInvocationHandler implements InvocationHandler {
         } else if (parameterTypes.length == 1 && "equals".equals(methodName)) {
             return invoker.equals(args[0]);
         }
+
+        //将方法与参数封装成一个RpcInvocation，用于远程调用时的通信传输
         RpcInvocation rpcInvocation = new RpcInvocation(method, invoker.getInterface().getName(), args);
         String serviceKey = invoker.getUrl().getServiceKey();
         rpcInvocation.setTargetServiceUniqueName(serviceKey);

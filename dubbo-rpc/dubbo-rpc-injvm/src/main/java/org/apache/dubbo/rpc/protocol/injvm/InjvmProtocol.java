@@ -94,6 +94,12 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
 
     @Override
     public <T> Invoker<T> protocolBindingRefer(Class<T> serviceType, URL url) throws RpcException {
+        /**
+         * 参数一：接口实现类
+         * 参数二：provider服务的url
+         * 参数三：接口的全类名
+         * 参数四：exporterMap缓存了本地暴露的服务。这个exporterMap，我们在本地服务暴露的时候，最后将serviceKey和exporter都缓存进了这个map中
+         */
         return new InjvmInvoker<T>(serviceType, url, url.getServiceKey(), exporterMap);
     }
 

@@ -129,6 +129,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
     /**
      * The invoker of the reference service
+     * 暴露的服务的实现类的代理类
      */
     private transient volatile Invoker<?> invoker;
 
@@ -201,9 +202,14 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         if (destroyed) {
             throw new IllegalStateException("The invoker of ReferenceConfig(" + url + ") has already destroyed!");
         }
+
+        //还没有初始化的时候进行初始化
         if (ref == null) {
             init();
         }
+
+        //这里返回的其实就是接口实现类对应的invoker的代理proxy对象
+        //可以直接通过这个proxy对象去调用接口对应的方法
         return ref;
     }
 
@@ -302,9 +308,12 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
         serviceMetadata.getAttachments().putAll(map);
 
+        //前半部分是一些参数的配置和判断，主要看后半部分
+
         //创建接口实现类的代理
         ref = createProxy(map);
 
+        //元数据赋值
         serviceMetadata.setTarget(ref);
         serviceMetadata.addAttribute(PROXY_CLASS_REF, ref);
         ConsumerModel consumerModel = repository.lookupReferredService(serviceMetadata.getServiceKey());
@@ -321,13 +330,15 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
-        if (shouldJvmRefer(map)) {
+        if (shouldJvmRefer(map)) { //判断是不是本地引用
+            //是本地引用，构建本地引用的url
             URL url = new URL(LOCAL_PROTOCOL, LOCALHOST_VALUE, 0, interfaceClass.getName()).addParameters(map);
+            //此时url的protocol=injvm，下面的refer方法走自适应的injvm实现类
             invoker = REF_PROTOCOL.refer(interfaceClass, url);
             if (logger.isInfoEnabled()) {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
-        } else {
+        } else {//不是本地引用
             urls.clear();
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
                 String[] us = SEMICOLON_SPLIT_PATTERN.split(url);
@@ -403,6 +414,8 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             metadataService.publishServiceDefinition(consumerURL);
         }
         // create service proxy
+        //这里去生成代理对象
+        //注意，这里并不是直接代理的接口实现类，而是代理了已经代理了接口实现类的invoker（类似于将接口实现类代理了两层）
         return (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
     }
 
@@ -489,7 +502,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
     protected boolean shouldJvmRefer(Map<String, String> map) {
         URL tmpUrl = new URL("temp", "localhost", 0, map);
         boolean isJvmRefer;
-        if (isInjvm() == null) {
+        if (isInjvm() == null) { //如果
             // if a url is specified, don't do local reference
             if (url != null && url.length() > 0) {
                 isJvmRefer = false;
