@@ -132,6 +132,11 @@ public class RegistryProtocol implements Protocol {
     private final ProviderConfigurationListener providerConfigurationListener = new ProviderConfigurationListener();
     //To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
     //providerurl <--> exporter
+    /**
+     * url 的暴露集合
+     * key providerurl
+     * value exporter
+     */
     private final ConcurrentMap<String, ExporterChangeableWrapper<?>> bounds = new ConcurrentHashMap<>();
     private Protocol protocol;
     private RegistryFactory registryFactory;
@@ -188,8 +193,9 @@ public class RegistryProtocol implements Protocol {
 
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
+        //获取注册中心URL
         URL registryUrl = getRegistryUrl(originInvoker);
-        // url to export locally
+        //获取需要暴露的URL（即服务提供者）
         URL providerUrl = getProviderUrl(originInvoker);
 
         // Subscribe the override data
@@ -201,16 +207,19 @@ public class RegistryProtocol implements Protocol {
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
 
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
-        //export invoker
+        //export invoker 暴露服务  doLocalExport表示本地启动服务不包括去注册中心注册
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
 
-        // url to registry
+        // url to registry  获取注册中心
         final Registry registry = getRegistry(originInvoker);
+
         final URL registeredProviderUrl = getUrlToRegistry(providerUrl, registryUrl);
 
         // decide if we need to delay publish
         boolean register = providerUrl.getParameter(REGISTER_KEY, true);
+
         if (register) {
+            //向注册中心注册
             register(registryUrl, registeredProviderUrl);
         }
 
@@ -251,6 +260,7 @@ public class RegistryProtocol implements Protocol {
         String key = getCacheKey(originInvoker);
 
         return (ExporterChangeableWrapper<T>) bounds.computeIfAbsent(key, s -> {
+            //封装InvokerDelegate，将url封装起来了
             Invoker<?> invokerDelegate = new InvokerDelegate<>(originInvoker, providerUrl);
             return new ExporterChangeableWrapper<>((Exporter<T>) protocol.export(invokerDelegate), originInvoker);
         });

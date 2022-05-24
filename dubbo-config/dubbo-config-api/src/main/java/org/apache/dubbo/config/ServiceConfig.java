@@ -508,7 +508,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
-            //导出到远程
+            //远程暴露
             if (!SCOPE_LOCAL.equalsIgnoreCase(scope)) {
                 //注册中心链接不为空
                 if (CollectionUtils.isNotEmpty(registryURLs)) {
@@ -518,6 +518,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                             continue;
                         }
                         url = url.addParameterIfAbsent(DYNAMIC_KEY, registryURL.getParameter(DYNAMIC_KEY));
+                        //获取监控中心，将监控中心url添加到需要暴露的url中
                         URL monitorUrl = ConfigValidationUtils.loadMonitor(this, registryURL);
                         if (monitorUrl != null) {
                             url = url.addParameterAndEncoded(MONITOR_KEY, monitorUrl.toFullString());
@@ -538,7 +539,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
 
-                        //为服务提供类生成Invoker
+                        //为服务提供类生成Invoker代理对象
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
 
                         //用于持有invoker和serviceConfig
@@ -583,6 +584,11 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 .setHost(LOCALHOST_VALUE)
                 .setPort(0)
                 .build();
+        /**
+         * ref 接口实现类
+         * interfaceClass 接口class
+         * local 需要本地暴露的url
+         */
         Exporter<?> exporter = PROTOCOL.export(
                 PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, local));
         exporters.add(exporter);
