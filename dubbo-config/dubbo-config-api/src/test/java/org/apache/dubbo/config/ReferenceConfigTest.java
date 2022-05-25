@@ -65,12 +65,13 @@ public class ReferenceConfigTest {
         rc.setApplication(application);
         rc.setRegistry(registry);
         rc.setInterface(DemoService.class.getName());
-        rc.setInjvm(false);
+        rc.setInjvm(true);
 
         try {
             System.setProperty("java.net.preferIPv4Stack", "true");
             demoService.export();
-            rc.get();
+            DemoService demoService1 = rc.get();
+            int echo = demoService1.echo(10);
             Assertions.assertTrue(!LOCAL_PROTOCOL.equalsIgnoreCase(
                     rc.getInvoker().getUrl().getProtocol()));
         } finally {

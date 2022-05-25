@@ -505,6 +505,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             // scope != remote,暴露到本地
             if (!SCOPE_REMOTE.equalsIgnoreCase(scope)) {
                 //暴露到本地
+                //其实最后都是包装成exporter，存在exporterMap中
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
@@ -589,8 +590,8 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
          * interfaceClass 接口class
          * local 需要本地暴露的url
          */
-        Exporter<?> exporter = PROTOCOL.export(
-                PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, local));
+        Invoker invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, local);
+        Exporter<?> exporter = PROTOCOL.export(invoker);
         exporters.add(exporter);
         logger.info("Export dubbo service " + interfaceClass.getName() + " to local registry url : " + local);
     }

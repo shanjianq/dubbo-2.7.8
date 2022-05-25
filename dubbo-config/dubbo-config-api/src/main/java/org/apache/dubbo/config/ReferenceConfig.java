@@ -416,7 +416,8 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         // create service proxy
         //这里去生成代理对象
         //注意，这里并不是直接代理的接口实现类，而是代理了已经代理了接口实现类的invoker（类似于将接口实现类代理了两层）
-        return (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
+        T proxy = (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
+        return proxy;
     }
 
     private void checkInvokerAvailable() throws IllegalStateException {

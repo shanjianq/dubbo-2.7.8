@@ -36,6 +36,7 @@ class InjvmExporter<T> extends AbstractExporter<T> {
         this.key = key;
         this.exporterMap = exporterMap;
         exporterMap.put(key, this);
+        String ss ="";
     }
 
     @Override

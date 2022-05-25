@@ -57,6 +57,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
 
     /**
      * Whether to export the service
+     * 服务是否已经导出
      */
     protected Boolean export;
 
