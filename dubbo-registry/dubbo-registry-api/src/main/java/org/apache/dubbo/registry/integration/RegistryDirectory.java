@@ -90,6 +90,9 @@ import static org.apache.dubbo.rpc.cluster.Constants.ROUTER_KEY;
 
 /**
  * RegistryDirectory
+ * 注册中心目录
+ * 每一个service对应一个RegistryDirectory
+ * 本身也是一个NotifyListenner
  */
 public class RegistryDirectory<T> extends AbstractDirectory<T> implements NotifyListener {
 

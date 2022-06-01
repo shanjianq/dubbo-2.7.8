@@ -254,8 +254,13 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
             ((RpcInvocation) invocation).addObjectAttachments(contextAttachments);
         }
 
+        //获取所有服务提供者的集合
+        // 其实在这里，每个invoker都对应了一个netty client，内部包装有channel
         List<Invoker<T>> invokers = list(invocation);
+        //根据spi获取负载均衡策略，默认是random
         LoadBalance loadbalance = initLoadBalance(invokers, invocation);
+
+        //如果是异步调用，就设置调用编号
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);
         return doInvoke(invocation, invokers, loadbalance);
     }
@@ -288,6 +293,12 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
     protected abstract Result doInvoke(Invocation invocation, List<Invoker<T>> invokers,
                                        LoadBalance loadbalance) throws RpcException;
 
+    /**
+     * 获取所有服务提供者的invoker
+     * @param invocation
+     * @return
+     * @throws RpcException
+     */
     protected List<Invoker<T>> list(Invocation invocation) throws RpcException {
         return directory.list(invocation);
     }

@@ -20,6 +20,8 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.Directory;
 import org.apache.dubbo.rpc.cluster.support.wrapper.AbstractCluster;
 
+import java.util.Objects;
+
 /**
  * {@link FailoverClusterInvoker}
  *

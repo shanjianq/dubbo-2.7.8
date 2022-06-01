@@ -328,6 +328,11 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         dispatch(new ReferenceConfigInitializedEvent(this, invoker));
     }
 
+    /**
+     *
+     * @param map 本次生成代理对象时，调用方的一些数据信息
+     * @return
+     */
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
         if (shouldJvmRefer(map)) { //判断是不是本地引用
@@ -375,6 +380,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                 }
             }
 
+            //这里的urls
             if (urls.size() == 1) {
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else {

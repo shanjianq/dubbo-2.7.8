@@ -65,7 +65,8 @@ public class ReferenceConfigTest {
         rc.setApplication(application);
         rc.setRegistry(registry);
         rc.setInterface(DemoService.class.getName());
-        rc.setInjvm(true);
+//        rc.setInjvm(true);
+        rc.setInjvm(false);
 
         try {
             System.setProperty("java.net.preferIPv4Stack", "true");

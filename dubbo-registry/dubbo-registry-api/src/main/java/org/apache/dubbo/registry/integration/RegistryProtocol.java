@@ -465,17 +465,25 @@ public class RegistryProtocol implements Protocol {
     }
 
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
+        //创建directory对象
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
+        //设置注册中心
         directory.setRegistry(registry);
+        //设置协议
         directory.setProtocol(protocol);
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getConsumerUrl().getParameters());
+        //生成服务消费者链接
         URL subscribeUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(subscribeUrl);
+            //服务消费者注册
             registry.register(directory.getRegisteredConsumerUrl());
         }
+
+        //设置RouteChain
         directory.buildRouterChain(subscribeUrl);
+
         directory.subscribe(toSubscribeUrl(subscribeUrl));
 
         Invoker<T> invoker = cluster.join(directory);
