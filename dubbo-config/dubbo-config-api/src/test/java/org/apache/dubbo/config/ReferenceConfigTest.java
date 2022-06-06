@@ -49,7 +49,7 @@ public class ReferenceConfigTest {
 
         RegistryConfig registry = new RegistryConfig();
         registry.setAddress("multicast://224.5.6.7:1234");
-
+//        registry.setAddress("zookeeper://localhost:2181");
         ProtocolConfig protocol = new ProtocolConfig();
         protocol.setName("mockprotocol");
 

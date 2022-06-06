@@ -381,6 +381,8 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             }
 
             //这里的urls
+
+            //只有一个注册中心的话，自然只对应一个invoker
             if (urls.size() == 1) {
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else {
