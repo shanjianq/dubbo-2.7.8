@@ -88,6 +88,7 @@ public class QosProtocolWrapper implements Protocol {
 
     private void startQosServer(URL url) {
         try {
+            //判断是否已经启动
             if (!hasStarted.compareAndSet(false, true)) {
                 return;
             }

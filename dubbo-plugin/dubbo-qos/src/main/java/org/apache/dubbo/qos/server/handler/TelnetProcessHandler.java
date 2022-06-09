@@ -41,9 +41,11 @@ public class TelnetProcessHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
 
+        //消息为空，返回 dubbo>
         if (StringUtils.isBlank(msg)) {
             ctx.writeAndFlush(QosProcessHandler.PROMPT);
         } else {
+            //消息不为空，解析为对应的cmd命令
             CommandContext commandContext = TelnetCommandDecoder.decode(msg);
             commandContext.setRemote(ctx.channel());
 

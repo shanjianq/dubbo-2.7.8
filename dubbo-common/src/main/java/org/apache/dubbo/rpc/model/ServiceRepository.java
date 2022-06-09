@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentMap;
 import static org.apache.dubbo.common.BaseServiceMetadata.interfaceFromServiceKey;
 import static org.apache.dubbo.common.BaseServiceMetadata.versionFromServiceKey;
 
+/**
+ * 就从这里获取所有的provider和consumer列表
+ */
 public class ServiceRepository extends LifecycleAdapter implements FrameworkExt {
 
     public static final String NAME = "repository";

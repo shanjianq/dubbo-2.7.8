@@ -96,6 +96,7 @@ public class Server {
 
             @Override
             protected void initChannel(Channel ch) throws Exception {
+                //这个QosProcessHandler就是用来处理对应的qos命令的
                 ch.pipeline().addLast(new QosProcessHandler(welcome, acceptForeignIp));
             }
         });
