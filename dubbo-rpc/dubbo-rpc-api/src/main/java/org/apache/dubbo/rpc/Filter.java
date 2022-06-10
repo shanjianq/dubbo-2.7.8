@@ -39,6 +39,8 @@ import org.apache.dubbo.common.extension.SPI;
  * @see org.apache.dubbo.rpc.filter.EchoFilter
  * @see org.apache.dubbo.rpc.filter.TokenFilter
  * @see org.apache.dubbo.rpc.filter.TpsLimitFilter
+ *
+ * 这个filter本质上来说就是Invoker的一个静态代理类
  */
 @SPI
 public interface Filter {

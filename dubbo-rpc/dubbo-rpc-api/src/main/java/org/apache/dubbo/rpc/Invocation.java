@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 /**
  * Invocation. (API, Prototype, NonThreadSafe)
  *
+ * 每个暴露的方法对应一个invocation
  * @serial Don't change the class name and package name.
  * @see org.apache.dubbo.rpc.Invoker#invoke(Invocation)
  * @see org.apache.dubbo.rpc.RpcInvocation

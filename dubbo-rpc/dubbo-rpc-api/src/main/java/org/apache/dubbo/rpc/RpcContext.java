@@ -47,6 +47,9 @@ import static org.apache.dubbo.rpc.Constants.RETURN_KEY;
  * For example: A invokes B, then B invokes C. On service B, RpcContext saves invocation info from A to B before B
  * starts invoking C, and saves invocation info from B to C after B invokes C.
  *
+ * 用来给provider和consumer传递信息
+ * 一个RpcContext只对应一个rpc请求调用链，通过ThreadLocal绑定
+ *
  * @export
  * @see org.apache.dubbo.rpc.filter.ContextFilter
  */
@@ -54,6 +57,7 @@ public class RpcContext {
 
     /**
      * use internal thread local to improve performance
+     * 这个是本地的context
      */
     // FIXME REQUEST_CONTEXT
     private static final InternalThreadLocal<RpcContext> LOCAL = new InternalThreadLocal<RpcContext>() {
@@ -64,6 +68,7 @@ public class RpcContext {
     };
 
     // FIXME RESPONSE_CONTEXT
+    //这个是远端的context，也就是服务提供者的context
     private static final InternalThreadLocal<RpcContext> SERVER_LOCAL = new InternalThreadLocal<RpcContext>() {
         @Override
         protected RpcContext initialValue() {
@@ -71,6 +76,7 @@ public class RpcContext {
         }
     };
 
+    //附加信息 kv形式
     protected final Map<String, Object> attachments = new HashMap<>();
     private final Map<String, Object> values = new HashMap<String, Object>();
 
@@ -78,22 +84,29 @@ public class RpcContext {
 
     private URL url;
 
+    //调用方法名
     private String methodName;
 
+    //参数类型
     private Class<?>[] parameterTypes;
 
+    //参数
     private Object[] arguments;
 
+    //本地地址
     private InetSocketAddress localAddress;
 
+    //远端地址
     private InetSocketAddress remoteAddress;
 
     private String remoteApplicationName;
 
+    //这个一般服务调用者会用到，存储provider的invokers
     @Deprecated
     private List<Invoker<?>> invokers;
     @Deprecated
     private Invoker<?> invoker;
+    //调用信息
     @Deprecated
     private Invocation invocation;
 
