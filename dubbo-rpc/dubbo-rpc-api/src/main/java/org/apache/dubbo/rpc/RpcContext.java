@@ -50,6 +50,10 @@ import static org.apache.dubbo.rpc.Constants.RETURN_KEY;
  * 用来给provider和consumer传递信息
  * 一个RpcContext只对应一个rpc请求调用链，通过ThreadLocal绑定
  *
+ * 普通开发中，RpcContext基本用不到，但是某些框架在做dubbo兼容适配的时候会用到。
+ * 比如： 分布式链路追踪如何将traceId，spanId，pid传到服务调用者，就是调用了这个context
+ *       再就是分布式事务是怎么将全局事务id传递到子事务，也是用这个去做的
+ *
  * @export
  * @see org.apache.dubbo.rpc.filter.ContextFilter
  */

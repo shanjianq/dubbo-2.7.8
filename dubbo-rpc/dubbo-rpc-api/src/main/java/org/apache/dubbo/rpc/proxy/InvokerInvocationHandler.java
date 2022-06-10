@@ -66,6 +66,7 @@ public class InvokerInvocationHandler implements InvocationHandler {
         }
 
         //将方法与参数封装成一个RpcInvocation，用于远程调用时的通信传输
+        //这个就是通过netty远程通信时的信息实体
         RpcInvocation rpcInvocation = new RpcInvocation(method, invoker.getInterface().getName(), args);
         String serviceKey = invoker.getUrl().getServiceKey();
         rpcInvocation.setTargetServiceUniqueName(serviceKey);
