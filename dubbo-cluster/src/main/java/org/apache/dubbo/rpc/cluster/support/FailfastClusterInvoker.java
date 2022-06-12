@@ -47,9 +47,12 @@ public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {
         try {
             return invoker.invoke(invocation);
         } catch (Throwable e) {
+            //如果是rpc异常并且是业务异常，直接抛出
             if (e instanceof RpcException && ((RpcException) e).isBiz()) { // biz exception.
                 throw (RpcException) e;
             }
+
+            //其他的异常  使用RpcException 包装抛出
             throw new RpcException(e instanceof RpcException ? ((RpcException) e).getCode() : 0,
                     "Failfast invoke providers " + invoker.getUrl() + " " + loadbalance.getClass().getSimpleName()
                             + " select from all providers " + invokers + " for service " + getInterface().getName()

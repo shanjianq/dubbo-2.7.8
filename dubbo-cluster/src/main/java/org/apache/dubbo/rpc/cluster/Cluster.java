@@ -37,10 +37,10 @@ public interface Cluster {
 
     /**
      * Merge the directory invokers to a virtual invoker.
-     *
+     * 基于directory创建invoker对象
      * @param <T>
      * @param directory
-     * @return cluster invoker
+     * @return cluster invoker 不同的实现类，返回不同的invoker
      * @throws RpcException
      */
     @Adaptive

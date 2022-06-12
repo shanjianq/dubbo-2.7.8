@@ -73,6 +73,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         failbackTasks = failbackTasksConfig;
     }
 
+    //使用定时任务进行重试
     private void addFailed(LoadBalance loadbalance, Invocation invocation, List<Invoker<T>> invokers, Invoker<T> lastInvoker) {
         if (failTimer == null) {
             synchronized (this) {
@@ -102,6 +103,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         } catch (Throwable e) {
             logger.error("Failback to invoke method " + invocation.getMethodName() + ", wait for retry in background. Ignored exception: "
                     + e.getMessage() + ", ", e);
+
             addFailed(loadbalance, invocation, invokers, invoker);
             return AsyncRpcResult.newDefaultAsyncResult(null, null, invocation); // ignore
         }
@@ -122,6 +124,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         private final Invocation invocation;
         private final LoadBalance loadbalance;
         private final List<Invoker<T>> invokers;
+        //
         private final int retries;
         private final long tick;
         private Invoker<T> lastInvoker;
@@ -136,11 +139,17 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
             this.lastInvoker=lastInvoker;
         }
 
+        /**
+         * 重试调用的具体执行逻辑
+         * @param timeout a handle which is associated with this task
+         */
         @Override
         public void run(Timeout timeout) {
             try {
                 Invoker<T> retryInvoker = select(loadbalance, invocation, invokers, Collections.singletonList(lastInvoker));
                 lastInvoker = retryInvoker;
+
+                //调用，我们看到是不接收执行结果，所以该容错类型只能用于通知类型，不适合普通的业务调用
                 retryInvoker.invoke(invocation);
             } catch (Throwable e) {
                 logger.error("Failed retry to invoke method " + invocation.getMethodName() + ", waiting again.", e);

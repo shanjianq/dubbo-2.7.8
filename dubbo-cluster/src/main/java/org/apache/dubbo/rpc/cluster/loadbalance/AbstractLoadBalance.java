@@ -38,11 +38,12 @@ import static org.apache.dubbo.rpc.cluster.Constants.WEIGHT_KEY;
 public abstract class AbstractLoadBalance implements LoadBalance {
     /**
      * Calculate the weight according to the uptime proportion of warmup time
+     * 根据预热时间属性：uptime去计算权重
      * the new weight will be within 1(inclusive) to weight(inclusive)
      *
-     * @param uptime the uptime in milliseconds
+     * @param uptime the uptime in milliseconds 服务启动时间
      * @param warmup the warmup time in milliseconds
-     * @param weight the weight of an invoker
+     * @param weight the weight of an invoker 初始权重
      * @return weight which takes warmup into account
      */
     static int calculateWarmupWeight(int uptime, int warmup, int weight) {

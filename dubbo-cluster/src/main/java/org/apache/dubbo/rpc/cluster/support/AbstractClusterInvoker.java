@@ -54,10 +54,14 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractClusterInvoker.class);
 
+    //服务提供者的一个目录
+    //provider的invokerList就是找它拿的
     protected Directory<T> directory;
 
+    //集群中是否排除不可用的invoker 默认为true
     protected boolean availablecheck;
 
+    //判断是否已经销毁
     private AtomicBoolean destroyed = new AtomicBoolean(false);
 
     private volatile Invoker<T> stickyInvoker = null;
@@ -137,6 +141,8 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         }
         String methodName = invocation == null ? StringUtils.EMPTY_STRING : invocation.getMethodName();
 
+        //是否老是使用一个invoker，默认false
+        //主要用于粘滞连接。粘滞连接用于有状态服务，尽可能让客户端总是向同一个提供者发起调用，除非该提供者挂了，再连另一台。
         boolean sticky = invokers.get(0).getUrl()
                 .getMethodParameter(methodName, CLUSTER_STICKY_KEY, DEFAULT_CLUSTER_STICKY);
 
@@ -168,6 +174,8 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
         if (invokers.size() == 1) {
             return invokers.get(0);
         }
+
+        //使用策略进行选择
         Invoker<T> invoker = loadbalance.select(invokers, getUrl(), invocation);
 
         //If the `invoker` is in the  `selected` or invoker is unavailable && availablecheck is true, reselect.
@@ -246,9 +254,11 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
 
     @Override
     public Result invoke(final Invocation invocation) throws RpcException {
+        //校验是否销毁
         checkWhetherDestroyed();
 
         // binding attachments into invocation.
+        //从RpcContext中获取，将一些公共的kv设置到invocation中，provider会从invocation中获取到这些attachments来使用
         Map<String, Object> contextAttachments = RpcContext.getContext().getObjectAttachments();
         if (contextAttachments != null && contextAttachments.size() != 0) {
             ((RpcInvocation) invocation).addObjectAttachments(contextAttachments);

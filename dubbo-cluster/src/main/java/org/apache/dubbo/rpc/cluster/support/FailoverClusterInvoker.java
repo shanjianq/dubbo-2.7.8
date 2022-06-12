@@ -85,6 +85,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
             //Reselect before retry to avoid a change of candidate `invokers`.
             //NOTE: if `invokers` changed, then `invoked` also lose accuracy.
             if (i > 0) {
+                //第二次以上的请求都会检查一下是否销毁，重新获取服务提供者列表，检验服务提供者列表（因为第一次请求期间，服务提供者可能会发生变化，或者服务正在销毁）
                 checkWhetherDestroyed();
                 copyInvokers = list(invocation);
                 // check again
@@ -110,6 +111,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 }
                 return result;
             } catch (RpcException e) {
+                //如果是业务异常，说明请求是通的，此时直接抛出业务异常即可
                 if (e.isBiz()) { // biz exception.
                     throw e;
                 }
