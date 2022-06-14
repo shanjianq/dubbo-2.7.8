@@ -55,10 +55,14 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
      */
     private static final Map<String, Monitor> MONITORS = new ConcurrentHashMap<String, Monitor>();
 
+    /**
+     * 任务缓存，任务的返回值monitor就是需要创建的monitor
+     */
     private static final Map<String, CompletableFuture<Monitor>> FUTURES = new ConcurrentHashMap<String, CompletableFuture<Monitor>>();
 
     /**
      * The monitor create executor
+     * 创建monitor的线程池
      */
     private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(0, 10, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new NamedThreadFactory("DubboMonitorCreator", true));
 
@@ -70,6 +74,7 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
     public Monitor getMonitor(URL url) {
         url = url.setPath(MonitorService.class.getName()).addParameter(INTERFACE_KEY, MonitorService.class.getName());
         String key = url.toServiceStringWithoutResolving();
+        //从缓存中获取monitor
         Monitor monitor = MONITORS.get(key);
         Future<Monitor> future = FUTURES.get(key);
         if (monitor != null || future != null) {
@@ -85,8 +90,15 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
             }
 
             final URL monitorUrl = url;
+            /**
+             * 异步创建monitor
+             */
             final CompletableFuture<Monitor> completableFuture = CompletableFuture.supplyAsync(() -> AbstractMonitorFactory.this.createMonitor(monitorUrl));
             FUTURES.put(key, completableFuture);
+            /**
+             * 执行完上面的任务执行下面的
+             * 这两个任务的最终目的就是创建出一个monitor，然后塞到缓存MONITORS中去
+             */
             completableFuture.thenRunAsync(new MonitorListener(key), EXECUTOR);
 
             return null;
@@ -99,6 +111,9 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
     protected abstract Monitor createMonitor(URL url);
 
 
+    /**
+     * 本质上就是一个任务
+     */
     class MonitorListener implements Runnable {
 
         private String key;
@@ -112,6 +127,7 @@ public abstract class AbstractMonitorFactory implements MonitorFactory {
             try {
                 CompletableFuture<Monitor> completableFuture = AbstractMonitorFactory.FUTURES.get(key);
                 AbstractMonitorFactory.MONITORS.put(key, completableFuture.get());
+                //从任务缓存中移除这个任务
                 AbstractMonitorFactory.FUTURES.remove(key);
             } catch (InterruptedException e) {
                 logger.warn("Thread was interrupted unexpectedly, monitor will never be got.");
