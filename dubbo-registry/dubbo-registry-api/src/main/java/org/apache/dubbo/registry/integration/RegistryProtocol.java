@@ -465,7 +465,7 @@ public class RegistryProtocol implements Protocol {
     }
 
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
-        //创建directory对象
+        //创建directory对象 这个directory会跟着传入构造一个failoverClusterInvoker（cluster.join()），作为消费端的调用invoker
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         //设置注册中心
         directory.setRegistry(registry);
