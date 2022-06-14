@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 public class RouterChain<T> {
 
     // full list of addresses from registry, classified by method name.
+    //这个invokers是在订阅了对应的url，然后notify的时候填充进来的，具体在refreshInvoker方法中
     private List<Invoker<T>> invokers = Collections.emptyList();
 
     // containing all routers, reconstruct every time 'route://' urls change.
@@ -95,6 +96,7 @@ public class RouterChain<T> {
      */
     public List<Invoker<T>> route(URL url, Invocation invocation) {
         List<Invoker<T>> finalInvokers = invokers;
+
         for (Router router : routers) {
             finalInvokers = router.route(finalInvokers, url, invocation);
         }
